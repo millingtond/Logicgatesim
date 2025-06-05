@@ -291,3 +291,56 @@ body {
 .btn-secondary:hover {
     background: #d5dbdb;
 }
+
+/* Canvas cursor styles for interactive components */
+#circuit-canvas.over-switch {
+    cursor: pointer !important;
+}
+
+#circuit-canvas.over-button {
+    cursor: pointer !important;
+}
+
+/* Visual feedback for switches */
+.switch-indicator {
+    position: absolute;
+    background: rgba(52, 152, 219, 0.1);
+    border: 2px solid #3498db;
+    border-radius: 4px;
+    pointer-events: none;
+    display: none;
+}
+
+.switch-indicator.visible {
+    display: block;
+}
+
+/* Add glow effect for interactive components */
+@keyframes interactiveGlow {
+    0% {
+        filter: drop-shadow(0 0 2px rgba(52, 152, 219, 0.5));
+    }
+    50% {
+        filter: drop-shadow(0 0 8px rgba(52, 152, 219, 0.8));
+    }
+    100% {
+        filter: drop-shadow(0 0 2px rgba(52, 152, 219, 0.5));
+    }
+}
+
+/* Tooltip for switches */
+.component-tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 1000;
+    display: none;
+}
+
+.component-tooltip.visible {
+    display: block;
+}

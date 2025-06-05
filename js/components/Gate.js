@@ -33,9 +33,16 @@ class Gate {
     }
     
     evaluate() {
-        const inputValues = this.inputConnections.map(conn => 
-            conn ? conn.getValue() : false
-        );
+        const inputValues = this.inputConnections.map(conn => {
+            if (!conn) return false;
+            
+            // Get the value from the connected component
+            if (conn.fromComponent) {
+                return conn.fromComponent.output || false;
+            }
+            
+            return false;
+        });
         
         switch(this.type) {
             case 'AND':

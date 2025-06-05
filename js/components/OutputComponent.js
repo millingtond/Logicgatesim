@@ -57,11 +57,11 @@ class OutputComponent {
         }
     }
     
-    evaluate() {
+evaluate() {
         switch(this.subtype) {
             case 'bulb':
                 const input = this.inputConnections[0];
-                this.value = input ? input.getValue() : false;
+                this.value = input && input.fromComponent ? input.fromComponent.output : false;
                 this.targetBrightness = this.value ? 1 : 0;
                 // Smooth brightness transition
                 const diff = this.targetBrightness - this.brightness;
@@ -72,7 +72,7 @@ class OutputComponent {
                 // Read all 4 inputs for the display
                 for (let i = 0; i < 4; i++) {
                     const input = this.inputConnections[i];
-                    this.values[i] = input ? input.getValue() : false;
+                    this.values[i] = input && input.fromComponent ? input.fromComponent.output : false;
                 }
                 // Calculate decimal value
                 this.value = this.values.reduce((acc, bit, index) => 
@@ -82,7 +82,7 @@ class OutputComponent {
                 
             case 'probe':
                 const probeInput = this.inputConnections[0];
-                this.value = probeInput ? probeInput.getValue() : false;
+                this.value = probeInput && probeInput.fromComponent ? probeInput.fromComponent.output : false;
                 // Add to history
                 this.history.push(this.value);
                 if (this.history.length > this.maxHistory) {
@@ -92,7 +92,7 @@ class OutputComponent {
                 
             case 'speaker':
                 const speakerInput = this.inputConnections[0];
-                this.value = speakerInput ? speakerInput.getValue() : false;
+                this.value = speakerInput && speakerInput.fromComponent ? speakerInput.fromComponent.output : false;
                 this.updateSound();
                 break;
         }

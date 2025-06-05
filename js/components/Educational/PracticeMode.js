@@ -9,6 +9,12 @@ class PracticeMode {
         this.questionsCompleted = 0;
         this.startTime = null;
         this.questionStartTime = null;
+                // Add state management
+        this.state = {
+            active: false,
+            started: false,
+            completed: false
+        };
         
         // UI elements
         this.container = null;
@@ -381,7 +387,9 @@ class PracticeMode {
             tableHTML += `<th>${v}</th>`;
         });
         tableHTML += '<th class="separator"></th><th>Output</th></tr></thead>';
-        
+                // Mark as active
+        this.state.active = true;
+        this.state.started = true;
         // Body
         tableHTML += '<tbody>';
         this.currentQuestion.incompleteTable.forEach((row, index) => {
@@ -856,6 +864,9 @@ class PracticeMode {
                 <button class="btn-primary" onclick="location.reload()">Back to Main</button>
             </div>
         `;
+                // Mark as inactive
+        this.state.active = false;
+        this.state.completed = true;
         
         // Save progress
         this.saveProgress();

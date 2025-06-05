@@ -147,7 +147,7 @@ class CanvasManager {
     }
     
     // Mouse event handlers
-    handleMouseDown(e) {
+handleMouseDown(e) {
         const rect = this.canvas.getBoundingClientRect();
         this.mouse.x = e.clientX - rect.left;
         this.mouse.y = e.clientY - rect.top;
@@ -166,16 +166,27 @@ class CanvasManager {
             return;
         }
         
-        // Check if clicking on a port for wiring
-        const port = this.getPortAt(this.mouse.worldX, this.mouse.worldY);
-        if (port && port.type === 'output') {
-            this.startWiring(port.component, port);
-            return;
-        }
-        
         // Check if clicking on a component
         const component = this.circuit.getComponentAt(this.mouse.worldX, this.mouse.worldY);
+        
         if (component) {
+            // Handle input component clicks (switches, buttons)
+            if (component.type === 'input' && component.handleClick) {
+                const handled = component.handleClick(this.mouse.worldX, this.mouse.worldY);
+                if (handled) {
+                    // Don't start dragging if the component handled the click
+                    return;
+                }
+            }
+            
+            // Check if clicking on a port for wiring
+            const port = component.getConnectionPointAt(this.mouse.worldX, this.mouse.worldY);
+            if (port && port.type === 'output') {
+                this.startWiring(port.component, port);
+                return;
+            }
+            
+            // Selection and dragging logic
             if (e.ctrlKey || e.metaKey) {
                 // Toggle selection with Ctrl/Cmd
                 if (component.selected) {
@@ -270,8 +281,16 @@ class CanvasManager {
         this.updateCursor();
     }
     
+// Also add this to handleMouseUp to handle button releases
     handleMouseUp(e) {
         this.state.isMouseDown = false;
+        
+        // Handle button release
+        this.circuit.components.forEach(component => {
+            if (component.type === 'input' && component.handleMouseUp) {
+                component.handleMouseUp();
+            }
+        });
         
         // End panning
         if (this.state.isPanning) {
@@ -556,9 +575,30 @@ class CanvasManager {
     }
     
     updateCursor() {
-        if (this.hoverInfo.port && this.hoverInfo.port.type === 'output') {
-            this.canvas.style.cursor = 'crosshair';
-        } else if (this.hoverInfo.component) {
+        // Check what we're hovering over
+        const component = this.hoverInfo.component;
+        
+        if (component) {
+            // Check if it's an interactive input component
+            if (component.type === 'input' && 
+                (component.subtype === 'switch' || 
+                 component.subtype === 'button' || 
+                 component.subtype === 'clock')) {
+                this.canvas.style.cursor = 'pointer';
+                return;
+            }
+            
+            // Check if hovering over a connection point
+            if (this.hoverInfo.port) {
+                if (this.hoverInfo.port.type === 'output') {
+                    this.canvas.style.cursor = 'crosshair';
+                } else {
+                    this.canvas.style.cursor = 'crosshair';
+                }
+                return;
+            }
+            
+            // Default to move cursor for other components
             this.canvas.style.cursor = 'move';
         } else {
             this.canvas.style.cursor = 'default';

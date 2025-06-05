@@ -18,81 +18,80 @@ class PropertiesPanel {
     
     setupContainers() {
         // Expression display
-        const expressionSection = document.getElementById('expression-display');
-        if (!expressionSection) {
-            const section = document.createElement('section');
-            section.className = 'panel-section';
-            section.innerHTML = `
-                <h3>Boolean Expression</h3>
-                <div class="expression-display" id="expression-display">
-                    <p class="expression-text">No circuit</p>
-                </div>
-                <div class="expression-controls">
-                    <button class="btn-small" id="copy-expression">Copy</button>
-                    <button class="btn-small" id="simplify-expression">Simplify</button>
-                </div>
-            `;
-            this.container.appendChild(section);
-        }
         this.expressionDisplay = document.getElementById('expression-display');
         
         // Truth table container
-        if (!document.getElementById('truth-table-container')) {
-            const section = document.createElement('section');
-            section.className = 'panel-section';
-            section.innerHTML = `
-                <h3>Truth Table</h3>
-                <div class="truth-table-container" id="truth-table-container">
-                    <p class="placeholder-text">Build a circuit to see truth table</p>
-                </div>
-                <div class="truth-table-controls">
-                    <button class="btn-small" id="export-truth-table">Export CSV</button>
-                    <button class="btn-small" id="show-k-map">K-Map</button>
-                </div>
-            `;
-            this.container.appendChild(section);
-        }
         this.truthTableContainer = document.getElementById('truth-table-container');
         
-        // Component properties
-        const propertiesSection = document.createElement('section');
-        propertiesSection.className = 'panel-section';
-        propertiesSection.id = 'component-properties-section';
-        propertiesSection.innerHTML = `
-            <h3>Component Properties</h3>
-            <div class="component-properties" id="component-properties">
-                <p class="placeholder-text">Select a component to view properties</p>
-            </div>
-        `;
-        this.container.appendChild(propertiesSection);
+        // Component properties - create if doesn't exist
+        let propertiesSection = document.getElementById('component-properties-section');
+        if (!propertiesSection && this.container) {
+            propertiesSection = document.createElement('section');
+            propertiesSection.className = 'panel-section';
+            propertiesSection.id = 'component-properties-section';
+            propertiesSection.innerHTML = `
+                <h3>Component Properties</h3>
+                <div class="component-properties" id="component-properties">
+                    <p class="placeholder-text">Select a component to view properties</p>
+                </div>
+            `;
+            this.container.appendChild(propertiesSection);
+        }
         this.componentPropertiesContainer = document.getElementById('component-properties');
         
-        // Circuit analysis
-        const analysisSection = document.createElement('section');
-        analysisSection.className = 'panel-section';
-        analysisSection.innerHTML = `
-            <h3>Circuit Analysis</h3>
-            <div class="circuit-analysis" id="circuit-analysis">
-                <div class="analysis-item">
-                    <span class="label">Components:</span>
-                    <span class="value" id="component-count">0</span>
+        // Circuit analysis - create if doesn't exist
+        let analysisSection = document.getElementById('circuit-analysis-section');
+        if (!analysisSection && this.container) {
+            analysisSection = document.createElement('section');
+            analysisSection.className = 'panel-section';
+            analysisSection.innerHTML = `
+                <h3>Circuit Analysis</h3>
+                <div class="circuit-analysis" id="circuit-analysis">
+                    <div class="analysis-item">
+                        <span class="label">Components:</span>
+                        <span class="value" id="component-count">0</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="label">Connections:</span>
+                        <span class="value" id="connection-count">0</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="label">Depth:</span>
+                        <span class="value" id="circuit-depth">0</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="label">Complexity:</span>
+                        <span class="value" id="circuit-complexity">0</span>
+                    </div>
                 </div>
-                <div class="analysis-item">
-                    <span class="label">Connections:</span>
-                    <span class="value" id="connection-count">0</span>
-                </div>
-                <div class="analysis-item">
-                    <span class="label">Depth:</span>
-                    <span class="value" id="circuit-depth">0</span>
-                </div>
-                <div class="analysis-item">
-                    <span class="label">Complexity:</span>
-                    <span class="value" id="circuit-complexity">0</span>
-                </div>
-            </div>
-            <div class="analysis-warnings" id="analysis-warnings"></div>
-        `;
-        this.container.appendChild(analysisSection);
+                <div class="analysis-warnings" id="analysis-warnings"></div>
+            `;
+            this.container.appendChild(analysisSection);
+        }
+        
+        // Add expression controls if they don't exist
+        const expressionSection = this.expressionDisplay?.parentElement;
+        if (expressionSection && !document.getElementById('copy-expression')) {
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'expression-controls';
+            controlsDiv.innerHTML = `
+                <button class="btn-small" id="copy-expression">Copy</button>
+                <button class="btn-small" id="simplify-expression">Simplify</button>
+            `;
+            expressionSection.appendChild(controlsDiv);
+        }
+        
+        // Add truth table controls if they don't exist
+        const truthTableSection = this.truthTableContainer?.parentElement;
+        if (truthTableSection && !document.getElementById('export-truth-table')) {
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'truth-table-controls';
+            controlsDiv.innerHTML = `
+                <button class="btn-small" id="export-truth-table">Export CSV</button>
+                <button class="btn-small" id="show-k-map">K-Map</button>
+            `;
+            truthTableSection.appendChild(controlsDiv);
+        }
     }
     
     setupEventListeners() {
@@ -106,22 +105,26 @@ class PropertiesPanel {
         this.circuit.addEventListener('connectionAdded', () => this.update());
         this.circuit.addEventListener('connectionRemoved', () => this.update());
         
-        // Button events
-        document.getElementById('copy-expression').addEventListener('click', () => {
-            this.copyExpression();
-        });
+        // Button events - check if elements exist before adding listeners
+        const copyBtn = document.getElementById('copy-expression');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => this.copyExpression());
+        }
         
-        document.getElementById('simplify-expression').addEventListener('click', () => {
-            this.simplifyExpression();
-        });
+        const simplifyBtn = document.getElementById('simplify-expression');
+        if (simplifyBtn) {
+            simplifyBtn.addEventListener('click', () => this.simplifyExpression());
+        }
         
-        document.getElementById('export-truth-table').addEventListener('click', () => {
-            this.exportTruthTable();
-        });
+        const exportBtn = document.getElementById('export-truth-table');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => this.exportTruthTable());
+        }
         
-        document.getElementById('show-k-map').addEventListener('click', () => {
-            this.showKarnaughMap();
-        });
+        const kmapBtn = document.getElementById('show-k-map');
+        if (kmapBtn) {
+            kmapBtn.addEventListener('click', () => this.showKarnaughMap());
+        }
     }
     
     render() {
@@ -136,20 +139,24 @@ class PropertiesPanel {
     }
     
     updateExpression() {
+        if (!this.expressionDisplay) return;
+        
         const analyzer = new CircuitAnalyzer(this.circuit);
         const analysis = analyzer.analyze();
         
         const expressionText = this.expressionDisplay.querySelector('.expression-text');
-        if (analysis.expression) {
-            expressionText.innerHTML = `
-                <div class="expression-main">${this.formatExpression(analysis.expression)}</div>
-                <div class="expression-info">
-                    <span class="inputs">Inputs: ${analysis.inputs.map(i => i.label).join(', ')}</span>
-                    <span class="outputs">Outputs: ${analysis.outputs.map(o => o.label).join(', ')}</span>
-                </div>
-            `;
-        } else {
-            expressionText.innerHTML = '<p class="placeholder-text">No complete circuit</p>';
+        if (expressionText) {
+            if (analysis.expression) {
+                expressionText.innerHTML = `
+                    <div class="expression-main">${this.formatExpression(analysis.expression)}</div>
+                    <div class="expression-info">
+                        <span class="inputs">Inputs: ${analysis.inputs.map(i => i.label).join(', ')}</span>
+                        <span class="outputs">Outputs: ${analysis.outputs.map(o => o.label).join(', ')}</span>
+                    </div>
+                `;
+            } else {
+                expressionText.innerHTML = '<p class="placeholder-text">No complete circuit</p>';
+            }
         }
     }
     
@@ -165,6 +172,8 @@ class PropertiesPanel {
     }
     
     updateTruthTable() {
+        if (!this.truthTableContainer) return;
+        
         const generator = new TruthTableGenerator(this.circuit);
         const tableHTML = generator.generateHTML();
         
@@ -207,28 +216,46 @@ class PropertiesPanel {
         const analyzer = new CircuitAnalyzer(this.circuit);
         const summary = analyzer.getSummary();
         
-        document.getElementById('component-count').textContent = 
-            summary.inputCount + summary.outputCount + summary.gateCount;
-        document.getElementById('connection-count').textContent = summary.connectionCount;
-        document.getElementById('circuit-depth').textContent = summary.depth;
-        document.getElementById('circuit-complexity').textContent = 
-            summary.complexity.toFixed(1);
+        // Update counts if elements exist
+        const componentCount = document.getElementById('component-count');
+        if (componentCount) {
+            componentCount.textContent = summary.inputCount + summary.outputCount + summary.gateCount;
+        }
+        
+        const connectionCount = document.getElementById('connection-count');
+        if (connectionCount) {
+            connectionCount.textContent = summary.connectionCount;
+        }
+        
+        const circuitDepth = document.getElementById('circuit-depth');
+        if (circuitDepth) {
+            circuitDepth.textContent = summary.depth;
+        }
+        
+        const circuitComplexity = document.getElementById('circuit-complexity');
+        if (circuitComplexity) {
+            circuitComplexity.textContent = summary.complexity.toFixed(1);
+        }
         
         // Show warnings
         const warningsContainer = document.getElementById('analysis-warnings');
-        if (summary.hasWarnings) {
-            warningsContainer.innerHTML = `
-                <div class="warning-header">⚠️ Issues Found:</div>
-                ${summary.warnings.map(w => `
-                    <div class="warning-item">${w.message}</div>
-                `).join('')}
-            `;
-        } else {
-            warningsContainer.innerHTML = '';
+        if (warningsContainer) {
+            if (summary.hasWarnings) {
+                warningsContainer.innerHTML = `
+                    <div class="warning-header">⚠️ Issues Found:</div>
+                    ${summary.warnings.map(w => `
+                        <div class="warning-item">${w.message}</div>
+                    `).join('')}
+                `;
+            } else {
+                warningsContainer.innerHTML = '';
+            }
         }
     }
     
     updateComponentProperties() {
+        if (!this.componentPropertiesContainer) return;
+        
         if (this.selectedComponent) {
             this.showComponentProperties(this.selectedComponent);
         } else {
@@ -381,7 +408,7 @@ class PropertiesPanel {
             html += `
                 <div class="property-item">
                     <span class="label">Display Value:</span>
-                    <span class="value">${output.value.toString(16).toUpperCase()}</span>
+                    <span class="value">${output.value ? output.value.toString(16).toUpperCase() : '0'}</span>
                 </div>
             `;
         }
@@ -397,8 +424,8 @@ class PropertiesPanel {
                                min="100" 
                                max="2000" 
                                step="10" 
-                               value="${output.frequency}">
-                        <span class="value">${output.frequency} Hz</span>
+                               value="${output.frequency || 440}">
+                        <span class="value">${output.frequency || 440} Hz</span>
                     </div>
                 </div>
             `;
@@ -465,7 +492,11 @@ class PropertiesPanel {
         const labelInput = document.getElementById('component-label');
         if (labelInput) {
             labelInput.addEventListener('change', (e) => {
-                component.setLabel(e.target.value);
+                if (component.setLabel) {
+                    component.setLabel(e.target.value);
+                } else {
+                    component.label = e.target.value;
+                }
                 this.update();
             });
         }
@@ -474,8 +505,13 @@ class PropertiesPanel {
         const freqInput = document.getElementById('clock-frequency');
         if (freqInput) {
             freqInput.addEventListener('input', (e) => {
-                component.setFrequency(parseFloat(e.target.value));
-                e.target.nextElementSibling.textContent = `${e.target.value} Hz`;
+                if (component.setFrequency) {
+                    component.setFrequency(parseFloat(e.target.value));
+                }
+                const display = e.target.nextElementSibling;
+                if (display) {
+                    display.textContent = `${e.target.value} Hz`;
+                }
             });
         }
         
@@ -492,7 +528,10 @@ class PropertiesPanel {
         if (speakerFreqInput) {
             speakerFreqInput.addEventListener('input', (e) => {
                 component.frequency = parseInt(e.target.value);
-                e.target.nextElementSibling.textContent = `${e.target.value} Hz`;
+                const display = e.target.nextElementSibling;
+                if (display) {
+                    display.textContent = `${e.target.value} Hz`;
+                }
             });
         }
     }
@@ -504,6 +543,15 @@ class PropertiesPanel {
         if (analysis.expression) {
             navigator.clipboard.writeText(analysis.expression).then(() => {
                 this.showNotification('Expression copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = analysis.expression;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                this.showNotification('Expression copied to clipboard!');
             });
         }
     }
@@ -513,10 +561,14 @@ class PropertiesPanel {
         const analysis = analyzer.analyze();
         
         if (analysis.expression) {
-            const parser = new ExpressionParser();
-            const simplified = parser.simplifyExpression(analysis.expression);
-            
-            this.showSimplificationDialog(analysis.expression, simplified);
+            try {
+                const parser = new ExpressionParser();
+                const simplified = parser.simplifyExpression(analysis.expression);
+                
+                this.showSimplificationDialog(analysis.expression, simplified);
+            } catch (error) {
+                this.showNotification('Could not simplify expression', 'error');
+            }
         }
     }
     
@@ -570,7 +622,7 @@ class PropertiesPanel {
         console.log('Original:', original);
         console.log('Simplified:', simplified);
         
-        this.showNotification('Expression simplified!');
+        this.showNotification('Expression simplified! Check console for details.');
     }
     
     showKMapDialog(kMap) {
@@ -578,6 +630,6 @@ class PropertiesPanel {
         // For now, just show in console
         console.log('K-Map:', kMap);
         
-        this.showNotification('K-Map generated!');
+        this.showNotification('K-Map generated! Check console for details.');
     }
 }

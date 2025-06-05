@@ -71,14 +71,14 @@ class Circuit {
             });
         }
         
-        const connection = {
-            id: this.generateId('connection'),
-            fromComponent: fromComponent,
-            fromPort: fromPort,
-            toComponent: toComponent,
-            toPort: toPort,
-            selected: false
-        };
+const connection = {
+    id: this.generateId('connection'),
+    fromComponent: fromComponent,  // This is the actual component object
+    fromPort: fromPort,
+    toComponent: toComponent,      // This is the actual component object
+    toPort: toPort,
+    selected: false
+};
         
         this.connections.set(connection.id, connection);
         
@@ -422,6 +422,14 @@ class Circuit {
                 this.addConnection(fromComponent, fromPort, toComponent, toPort);
             }
         });
+    }
+        loadFromData(data) {
+        // If data has components and connections, use loadFromSnapshot
+        if (data && data.components && data.connections) {
+            this.loadFromSnapshot(data);
+        } else {
+            console.error('Invalid circuit data format');
+        }
     }
     
     // Clear the circuit

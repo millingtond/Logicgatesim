@@ -103,9 +103,18 @@ class LogicGateSimulator {
     
     startSimulation() {
         setInterval(() => {
-            if (this.mode === 'build' || 
-                (this.assessmentMode && this.assessmentMode.state.active) ||
-                (this.practiceMode && this.practiceMode.state.active)) {
+            // Check if we should run simulation based on current mode
+            let shouldSimulate = false;
+            
+            if (this.mode === 'build') {
+                shouldSimulate = true;
+            } else if (this.mode === 'assessment' && this.assessmentMode && this.assessmentMode.state && this.assessmentMode.state.active) {
+                shouldSimulate = true;
+            } else if (this.mode === 'practice' && this.practiceMode && this.practiceMode.state && this.practiceMode.state.active) {
+                shouldSimulate = true;
+            }
+            
+            if (shouldSimulate) {
                 this.simulator.simulate();
                 this.canvasManager.render();
                 this.propertiesPanel.update();
