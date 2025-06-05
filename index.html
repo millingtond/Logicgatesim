@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logic Gate Simulator</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/practice-mode.css">
+</head>
+<body>
+    <div id="logic-simulator-app">
+        <!-- Header -->
+        <header class="simulator-header">
+            <h1>Logic Gate Simulator</h1>
+            <nav class="mode-selector">
+                <button class="mode-btn active" data-mode="build">Build Mode</button>
+                <button class="mode-btn" data-mode="practice">Practice</button>
+                <button class="mode-btn" data-mode="assessment">Assessment</button>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <div class="simulator-body">
+            <!-- Component Palette -->
+            <aside class="component-palette" id="component-palette">
+                <section class="palette-section">
+                    <h3>Input Controls</h3>
+                    <div class="palette-items">
+                        <div class="palette-item" draggable="true" data-component-type="input" data-subtype="switch">
+                            <div class="component-icon">⚡</div>
+                            <span>Toggle Switch</span>
+                        </div>
+                        <div class="palette-item" draggable="true" data-component-type="input" data-subtype="button">
+                            <div class="component-icon">🔘</div>
+                            <span>Push Button</span>
+                        </div>
+                        <div class="palette-item" draggable="true" data-component-type="input" data-subtype="high">
+                            <div class="component-icon">1</div>
+                            <span>High Constant</span>
+                        </div>
+                        <div class="palette-item" draggable="true" data-component-type="input" data-subtype="low">
+                            <div class="component-icon">0</div>
+                            <span>Low Constant</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="palette-section">
+                    <h3>Logic Gates</h3>
+                    <div class="palette-items">
+                        <div class="palette-item" draggable="true" data-component-type="gate" data-subtype="AND">
+                            <div class="component-icon gate-icon">AND</div>
+                            <span>AND Gate</span>
+                        </div>
+                        <div class="palette-item" draggable="true" data-component-type="gate" data-subtype="OR">
+                            <div class="component-icon gate-icon">OR</div>
+                            <span>OR Gate</span>
+                        </div>
+                        <div class="palette-item" draggable="true" data-component-type="gate" data-subtype="NOT">
+                            <div class="component-icon gate-icon">NOT</div>
+                            <span>NOT Gate</span>
+                        </div>
+                        <div class="palette-item" draggable="true" data-component-type="gate" data-subtype="XOR">
+                            <div class="component-icon gate-icon">XOR</div>
+                            <span>XOR Gate</span>
+                        </div>
+                        <div class="palette-item" draggable="true" data-component-type="gate" data-subtype="NAND">
+                            <div class="component-icon gate-icon">NAND</div>
+                            <span>NAND Gate</span>
+                        </div>
+                        <div class="palette-item" draggable="true" data-component-type="gate" data-subtype="NOR">
+                            <div class="component-icon gate-icon">NOR</div>
+                            <span>NOR Gate</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="palette-section">
+                    <h3>Output Controls</h3>
+                    <div class="palette-items">
+                        <div class="palette-item" draggable="true" data-component-type="output" data-subtype="bulb">
+                            <div class="component-icon">💡</div>
+                            <span>Light Bulb</span>
+                        </div>
+                        <div class="palette-item" draggable="true" data-component-type="output" data-subtype="display">
+                            <div class="component-icon">📟</div>
+                            <span>4-Bit Display</span>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+
+            <!-- Canvas Area -->
+            <main class="canvas-container">
+                <div class="toolbar">
+                    <button class="tool-btn" id="btn-new">New</button>
+                    <button class="tool-btn" id="btn-save">Save</button>
+                    <button class="tool-btn" id="btn-load">Load</button>
+                    <div class="toolbar-separator"></div>
+                    <button class="tool-btn" id="btn-undo">Undo</button>
+                    <button class="tool-btn" id="btn-redo">Redo</button>
+                    <div class="toolbar-separator"></div>
+                    <button class="tool-btn" id="btn-delete">Delete</button>
+                    <button class="tool-btn" id="btn-clear">Clear All</button>
+                    <div class="toolbar-separator"></div>
+                    <button class="tool-btn active" id="btn-simulate">Simulate</button>
+                    <button class="tool-btn" id="btn-grid">Grid</button>
+                </div>
+                <canvas id="circuit-canvas"></canvas>
+            </main>
+
+            <!-- Properties Panel -->
+            <aside class="properties-panel">
+                <section class="panel-section">
+                    <h3>Boolean Expression</h3>
+                    <div class="expression-display" id="expression-display">
+                        <p class="expression-text">No circuit</p>
+                    </div>
+                    <div class="expression-input-container">
+                        <input type="text" id="expression-input" placeholder="Enter expression (e.g., A AND B OR NOT C)">
+                        <button id="btn-expression-to-circuit">Build Circuit</button>
+                    </div>
+                </section>
+
+                <section class="panel-section">
+                    <h3>Truth Table</h3>
+                    <div class="truth-table-container" id="truth-table-container">
+                        <p class="placeholder-text">Build a circuit to see truth table</p>
+                    </div>
+                </section>
+
+                <section class="panel-section" id="practice-section" style="display: none;">
+                    <h3>Practice Question</h3>
+                    <div class="question-container" id="question-container">
+                        <!-- Dynamic content -->
+                    </div>
+                    <button id="btn-check-answer" class="btn-primary">Check Answer</button>
+                    <button id="btn-next-question" class="btn-secondary">Next Question</button>
+                </section>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Load JavaScript files -->
+    <script src="js/components/Gate.js"></script>
+    <script src="js/components/Wire.js"></script>
+    <script src="js/components/InputComponent.js"></script>
+    <script src="js/components/OutputComponent.js"></script>
+    <script src="js/components/Connection.js"></script>
+    <script src="js/core/Circuit.js"></script>
+    <script src="js/core/Simulator.js"></script>
+    <script src="js/core/CanvasManager.js"></script>
+    <script src="js/utils/ExpressionParser.js"></script>
+    <script src="js/utils/CircuitAnalyzer.js"></script>
+    <script src="js/utils/QuestionGenerator.js"></script>
+    <script src="js/utils/TruthTableGenerator.js"></script>
+    <script src="js/ui/Palette.js"></script>
+    <script src="js/ui/PropertiesPanel.js"></script>
+    <script src="js/ui/Toolbar.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
