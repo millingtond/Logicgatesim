@@ -117,12 +117,36 @@ class InputComponent {
     
     drawSwitch(ctx) {
         // Draw switch body
-        ctx.fillStyle = this.selected ? '#3498db' : '#ecf0f1';
-        ctx.strokeStyle = this.selected ? '#2980b9' : '#95a5a6';
-        ctx.lineWidth = 2;
-        
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.strokeRect(this.x, this.y, this.width, this.height);
+    ctx.fillStyle = this.selected ? '#3498db' : '#ecf0f1';
+    ctx.strokeStyle = this.selected ? '#2980b9' : '#95a5a6';
+    ctx.lineWidth = 2;
+    
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.strokeRect(this.x, this.y, this.width, this.height);
+        // Draw a small toggle button in the corner
+    const buttonSize = 16;
+    const buttonX = this.x + this.width - buttonSize - 4;
+    const buttonY = this.y + 4;
+    
+    // Toggle button background
+    ctx.fillStyle = this.value ? '#27ae60' : '#e74c3c';
+    ctx.fillRect(buttonX, buttonY, buttonSize, buttonSize);
+    ctx.strokeRect(buttonX, buttonY, buttonSize, buttonSize);
+    
+    // Toggle button icon
+    ctx.fillStyle = 'white';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.value ? '✓' : '✗', buttonX + buttonSize/2, buttonY + buttonSize/2);
+    
+    // Store button bounds for click detection
+    this.toggleButtonBounds = {
+        x: buttonX,
+        y: buttonY,
+        width: buttonSize,
+        height: buttonSize
+    };
         
         // Draw switch lever
         ctx.save();

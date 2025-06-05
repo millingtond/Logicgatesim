@@ -148,191 +148,222 @@ class CanvasManager {
     
     // Mouse event handlers
 handleMouseDown(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        this.mouse.x = e.clientX - rect.left;
-        this.mouse.y = e.clientY - rect.top;
-        const worldPos = this.screenToWorld(this.mouse.x, this.mouse.y);
-        this.mouse.worldX = worldPos.x;
-        this.mouse.worldY = worldPos.y;
-        this.mouse.startX = this.mouse.x;
-        this.mouse.startY = this.mouse.y;
+    const rect = this.canvas.getBoundingClientRect();
+    this.mouse.x = e.clientX - rect.left;
+    this.mouse.y = e.clientY - rect.top;
+    const worldPos = this.screenToWorld(this.mouse.x, this.mouse.y);
+    this.mouse.worldX = worldPos.x;
+    this.mouse.worldY = worldPos.y;
+    this.mouse.startX = this.mouse.x;
+    this.mouse.startY = this.mouse.y;
+    
+    this.state.isMouseDown = true;
+    
+    // Store the mouse down time to detect clicks vs drags
+    this.mouseDownTime = Date.now();
+    this.hasMovedSignificantly = false;
+    
+    // Right click for pan
+    if (e.button === 2) {
+        this.state.isPanning = true;
+        this.canvas.style.cursor = 'grabbing';
+        return;
+    }
+    
+    // Check if clicking on a port for wiring first
+    const port = this.getPortAt(this.mouse.worldX, this.mouse.worldY);
+    if (port && port.type === 'output') {
+        this.startWiring(port.component, port);
+        return;
+    }
+    
+    // Check if clicking on a component
+    const component = this.circuit.getComponentAt(this.mouse.worldX, this.mouse.worldY);
+    
+    if (component) {
+        // Store the component for potential click handling
+        this.potentialClickComponent = component;
         
-        this.state.isMouseDown = true;
-        
-        // Right click for pan
-        if (e.button === 2) {
-            this.state.isPanning = true;
-            this.canvas.style.cursor = 'grabbing';
-            return;
-        }
-        
-        // Check if clicking on a component
-        const component = this.circuit.getComponentAt(this.mouse.worldX, this.mouse.worldY);
-        
-        if (component) {
-            // Handle input component clicks (switches, buttons)
-            if (component.type === 'input' && component.handleClick) {
-                const handled = component.handleClick(this.mouse.worldX, this.mouse.worldY);
-                if (handled) {
-                    // Don't start dragging if the component handled the click
-                    return;
-                }
-            }
-            
-            // Check if clicking on a port for wiring
-            const port = component.getConnectionPointAt(this.mouse.worldX, this.mouse.worldY);
-            if (port && port.type === 'output') {
-                this.startWiring(port.component, port);
-                return;
-            }
-            
-            // Selection and dragging logic
-            if (e.ctrlKey || e.metaKey) {
-                // Toggle selection with Ctrl/Cmd
-                if (component.selected) {
-                    this.circuit.deselectComponent(component.id);
-                } else {
-                    this.circuit.selectComponent(component.id);
-                }
-            } else if (!component.selected) {
-                // Select only this component
-                this.circuit.clearSelection();
+        // Selection logic
+        if (e.ctrlKey || e.metaKey) {
+            // Toggle selection with Ctrl/Cmd
+            if (component.selected) {
+                this.circuit.deselectComponent(component.id);
+            } else {
                 this.circuit.selectComponent(component.id);
             }
+        } else if (!component.selected) {
+            // Select only this component
+            this.circuit.clearSelection();
+            this.circuit.selectComponent(component.id);
+        }
+        
+        // Prepare for dragging (but don't start yet)
+        this.dragInfo.component = component;
+        this.dragInfo.offsetX = this.mouse.worldX - component.x;
+        this.dragInfo.offsetY = this.mouse.worldY - component.y;
+        this.dragInfo.hasMoved = false;
+        
+        // Don't set isDragging yet - wait for mouse move
+        this.canvas.style.cursor = 'move';
+    } else {
+        // Start selection box
+        if (!e.ctrlKey && !e.metaKey) {
+            this.circuit.clearSelection();
+        }
+        
+        this.selectionBox.active = true;
+        this.selectionBox.startX = this.mouse.worldX;
+        this.selectionBox.startY = this.mouse.worldY;
+        this.selectionBox.endX = this.mouse.worldX;
+        this.selectionBox.endY = this.mouse.worldY;
+        this.state.isSelecting = true;
+    }
+}
+    
+handleMouseMove(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    this.mouse.lastX = this.mouse.x;
+    this.mouse.lastY = this.mouse.y;
+    this.mouse.x = e.clientX - rect.left;
+    this.mouse.y = e.clientY - rect.top;
+    const worldPos = this.screenToWorld(this.mouse.x, this.mouse.y);
+    this.mouse.worldX = worldPos.x;
+    this.mouse.worldY = worldPos.y;
+    
+    // Check if we've moved significantly (more than 5 pixels)
+    if (this.state.isMouseDown && !this.hasMovedSignificantly) {
+        const dx = this.mouse.x - this.mouse.startX;
+        const dy = this.mouse.y - this.mouse.startY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 5) {
+            this.hasMovedSignificantly = true;
             
-            // Start dragging
-            this.dragInfo.component = component;
-            this.dragInfo.offsetX = this.mouse.worldX - component.x;
-            this.dragInfo.offsetY = this.mouse.worldY - component.y;
-            this.dragInfo.hasMoved = false;
-            this.state.isDragging = true;
-            
-            this.canvas.style.cursor = 'move';
-        } else {
-            // Start selection box
-            if (!e.ctrlKey && !e.metaKey) {
-                this.circuit.clearSelection();
+            // Start dragging if we have a component
+            if (this.dragInfo.component && !this.state.isDragging) {
+                this.state.isDragging = true;
+                this.potentialClickComponent = null; // Cancel potential click
             }
-            
-            this.selectionBox.active = true;
-            this.selectionBox.startX = this.mouse.worldX;
-            this.selectionBox.startY = this.mouse.worldY;
-            this.selectionBox.endX = this.mouse.worldX;
-            this.selectionBox.endY = this.mouse.worldY;
-            this.state.isSelecting = true;
         }
     }
     
-    handleMouseMove(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        this.mouse.lastX = this.mouse.x;
-        this.mouse.lastY = this.mouse.y;
-        this.mouse.x = e.clientX - rect.left;
-        this.mouse.y = e.clientY - rect.top;
-        const worldPos = this.screenToWorld(this.mouse.x, this.mouse.y);
-        this.mouse.worldX = worldPos.x;
-        this.mouse.worldY = worldPos.y;
-        
-        // Update hover state
-        this.updateHoverState();
-        
-        // Handle panning
-        if (this.state.isPanning) {
-            const dx = this.mouse.x - this.mouse.lastX;
-            const dy = this.mouse.y - this.mouse.lastY;
-            this.view.x += dx;
-            this.view.y += dy;
-            this.render();
-            return;
-        }
-        
-        // Handle wiring
-        if (this.state.isWiring) {
-            this.wireInfo.tempEndX = this.snapToGrid(this.mouse.worldX);
-            this.wireInfo.tempEndY = this.snapToGrid(this.mouse.worldY);
-            this.render();
-            return;
-        }
-        
-        // Handle dragging
-        if (this.state.isDragging && this.dragInfo.component) {
-            const newX = this.snapToGrid(this.mouse.worldX - this.dragInfo.offsetX);
-            const newY = this.snapToGrid(this.mouse.worldY - this.dragInfo.offsetY);
-            
-            const dx = newX - this.dragInfo.component.x;
-            const dy = newY - this.dragInfo.component.y;
-            
-            if (dx !== 0 || dy !== 0) {
-                this.dragInfo.hasMoved = true;
-                this.circuit.moveSelected(dx, dy);
-            }
-            return;
-        }
-        
-        // Handle selection box
-        if (this.state.isSelecting) {
-            this.selectionBox.endX = this.mouse.worldX;
-            this.selectionBox.endY = this.mouse.worldY;
-            this.updateSelectionBox();
-            this.render();
-        }
-        
-        // Update cursor based on hover
-        this.updateCursor();
+    // Update hover state
+    this.updateHoverState();
+    
+    // Handle panning
+    if (this.state.isPanning) {
+        const dx = this.mouse.x - this.mouse.lastX;
+        const dy = this.mouse.y - this.mouse.lastY;
+        this.view.x += dx;
+        this.view.y += dy;
+        this.render();
+        return;
     }
+    
+    // Handle wiring
+    if (this.state.isWiring) {
+        this.wireInfo.tempEndX = this.snapToGrid(this.mouse.worldX);
+        this.wireInfo.tempEndY = this.snapToGrid(this.mouse.worldY);
+        this.render();
+        return;
+    }
+    
+    // Handle dragging
+    if (this.state.isDragging && this.dragInfo.component) {
+        const newX = this.snapToGrid(this.mouse.worldX - this.dragInfo.offsetX);
+        const newY = this.snapToGrid(this.mouse.worldY - this.dragInfo.offsetY);
+        
+        const dx = newX - this.dragInfo.component.x;
+        const dy = newY - this.dragInfo.component.y;
+        
+        if (dx !== 0 || dy !== 0) {
+            this.dragInfo.hasMoved = true;
+            this.circuit.moveSelected(dx, dy);
+        }
+        return;
+    }
+    
+    // Handle selection box
+    if (this.state.isSelecting) {
+        this.selectionBox.endX = this.mouse.worldX;
+        this.selectionBox.endY = this.mouse.worldY;
+        this.updateSelectionBox();
+        this.render();
+    }
+    
+    // Update cursor based on hover
+    this.updateCursor();
+}
     
 // Also add this to handleMouseUp to handle button releases
-    handleMouseUp(e) {
-        this.state.isMouseDown = false;
+handleMouseUp(e) {
+    const timeSinceMouseDown = Date.now() - this.mouseDownTime;
+    const wasQuickClick = timeSinceMouseDown < 200; // 200ms threshold
+    
+    // Handle component click if it was a quick click without significant movement
+    if (this.potentialClickComponent && wasQuickClick && !this.hasMovedSignificantly) {
+        const component = this.potentialClickComponent;
         
-        // Handle button release
-        this.circuit.components.forEach(component => {
-            if (component.type === 'input' && component.handleMouseUp) {
-                component.handleMouseUp();
-            }
-        });
-        
-        // End panning
-        if (this.state.isPanning) {
-            this.state.isPanning = false;
-            this.canvas.style.cursor = 'default';
-            return;
-        }
-        
-        // End wiring
-        if (this.state.isWiring) {
-            const port = this.getPortAt(this.mouse.worldX, this.mouse.worldY);
-            if (port && port.type === 'input') {
-                this.circuit.addConnection(
-                    this.wireInfo.startComponent,
-                    this.wireInfo.startPort,
-                    port.component,
-                    port
-                );
-            }
-            this.endWiring();
-            return;
-        }
-        
-        // End dragging
-        if (this.state.isDragging) {
-            this.state.isDragging = false;
-            this.dragInfo.component = null;
-            this.canvas.style.cursor = 'default';
-            
-            if (this.dragInfo.hasMoved) {
-                this.circuit.saveToHistory();
-            }
-            return;
-        }
-        
-        // End selection box
-        if (this.state.isSelecting) {
-            this.state.isSelecting = false;
-            this.selectionBox.active = false;
-            this.render();
+        // Handle input component clicks (switches, buttons)
+        if (component.type === 'input' && component.handleClick) {
+            component.handleClick(this.mouse.worldX, this.mouse.worldY);
         }
     }
+    
+    // Reset state
+    this.state.isMouseDown = false;
+    this.potentialClickComponent = null;
+    this.hasMovedSignificantly = false;
+    
+    // Handle button release for all input components
+    this.circuit.components.forEach(component => {
+        if (component.type === 'input' && component.handleMouseUp) {
+            component.handleMouseUp();
+        }
+    });
+    
+    // End panning
+    if (this.state.isPanning) {
+        this.state.isPanning = false;
+        this.canvas.style.cursor = 'default';
+        return;
+    }
+    
+    // End wiring
+    if (this.state.isWiring) {
+        const port = this.getPortAt(this.mouse.worldX, this.mouse.worldY);
+        if (port && port.type === 'input') {
+            this.circuit.addConnection(
+                this.wireInfo.startComponent,
+                this.wireInfo.startPort,
+                port.component,
+                port
+            );
+        }
+        this.endWiring();
+        return;
+    }
+    
+    // End dragging
+    if (this.state.isDragging) {
+        this.state.isDragging = false;
+        this.dragInfo.component = null;
+        this.canvas.style.cursor = 'default';
+        
+        if (this.dragInfo.hasMoved) {
+            this.circuit.saveToHistory();
+        }
+        return;
+    }
+    
+    // End selection box
+    if (this.state.isSelecting) {
+        this.state.isSelecting = false;
+        this.selectionBox.active = false;
+        this.render();
+    }
+}
     
     handleWheel(e) {
         e.preventDefault();
@@ -363,54 +394,70 @@ handleMouseDown(e) {
     }
     
     // Keyboard handlers
-    handleKeyDown(e) {
-        // Delete selected components
-        if (e.key === 'Delete' || e.key === 'Backspace') {
-            if (this.circuit.selectedComponents.size > 0) {
-                e.preventDefault();
-                this.circuit.deleteSelected();
-            }
-        }
-        
-        // Select all
-        if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+handleKeyDown(e) {
+    // Check if the active element is an input, textarea, or contenteditable
+    const activeElement = document.activeElement;
+    const isInputField = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.contentEditable === 'true' ||
+        activeElement.classList.contains('expression-input-field')
+    );
+    
+    // If user is typing in an input field, don't intercept keyboard events
+    if (isInputField) {
+        return; // Let the input field handle the event normally
+    }
+    
+    // Your existing keyboard shortcuts here
+    // Delete selected components
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (this.circuit.selectedComponents.size > 0) {
             e.preventDefault();
-            this.circuit.selectAll();
-        }
-        
-        // Undo/Redo
-        if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-            e.preventDefault();
-            if (e.shiftKey) {
-                this.circuit.redo();
-            } else {
-                this.circuit.undo();
-            }
-        }
-        
-        // Copy/Paste (implement later)
-        if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
-            e.preventDefault();
-            // TODO: Implement copy
-        }
-        
-        if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-            e.preventDefault();
-            // TODO: Implement paste
-        }
-        
-        // Escape to cancel operations
-        if (e.key === 'Escape') {
-            if (this.state.isWiring) {
-                this.endWiring();
-            }
-            if (this.state.isSelecting) {
-                this.state.isSelecting = false;
-                this.selectionBox.active = false;
-                this.render();
-            }
+            this.circuit.deleteSelected();
         }
     }
+    
+    // Select all
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        e.preventDefault();
+        this.circuit.selectAll();
+    }
+    
+    // Undo/Redo
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+            this.circuit.redo();
+        } else {
+            this.circuit.undo();
+        }
+    }
+    
+    // Copy/Paste
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        e.preventDefault();
+        // TODO: Implement copy
+    }
+    
+    if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        e.preventDefault();
+        // TODO: Implement paste
+    }
+    
+    // Escape to cancel operations
+    if (e.key === 'Escape') {
+        if (this.state.isWiring) {
+            this.endWiring();
+        }
+        if (this.state.isSelecting) {
+            this.state.isSelecting = false;
+            this.selectionBox.active = false;
+            this.render();
+        }
+    }
+}
+
     
     handleKeyUp(e) {
         // Handle key releases if needed

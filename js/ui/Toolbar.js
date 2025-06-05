@@ -279,6 +279,17 @@ class Toolbar {
     
     setupShortcuts() {
         document.addEventListener('keydown', (e) => {
+                    // Check if user is typing in an input field
+        const activeElement = document.activeElement;
+        const isInputField = activeElement && (
+            activeElement.tagName === 'INPUT' ||
+            activeElement.tagName === 'TEXTAREA' ||
+            activeElement.contentEditable === 'true'
+        );
+                if (isInputField) {
+            return; // Don't process shortcuts while typing
+        }
+        
             // Build shortcut string
             let shortcut = '';
             if (e.ctrlKey || e.metaKey) shortcut += 'ctrl+';

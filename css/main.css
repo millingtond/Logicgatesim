@@ -344,3 +344,231 @@ body {
 .component-tooltip.visible {
     display: block;
 }
+
+/* Force the main layout to use flexbox properly */
+#logic-simulator-app {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    background: #f5f5f5 !important;
+}
+
+.simulator-body {
+    display: flex !important;
+    flex: 1 !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+/* Ensure component palette is visible */
+.component-palette {
+    width: 240px !important;
+    background: white !important;
+    border-right: 1px solid #e0e0e0 !important;
+    overflow-y: auto !important;
+    padding: 1rem !important;
+    display: block !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+/* Ensure canvas container takes remaining space */
+.canvas-container {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #fafafa !important;
+    position: relative !important;
+}
+
+/* Ensure properties panel is visible */
+.properties-panel {
+    width: 320px !important;
+    background: white !important;
+    border-left: 1px solid #e0e0e0 !important;
+    overflow-y: auto !important;
+    padding: 1rem !important;
+    display: block !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+/* Debug helper - add colored borders to see where elements are */
+.debug-borders .component-palette {
+    border: 3px solid red !important;
+}
+
+.debug-borders .canvas-container {
+    border: 3px solid green !important;
+}
+
+.debug-borders .properties-panel {
+    border: 3px solid blue !important;
+}
+
+/* Ensure canvas fills its container */
+#circuit-canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Fix potential hidden elements */
+* {
+    visibility: visible !important;
+}
+
+/* Ensure sections are not hidden */
+.panel-section {
+    display: block !important;
+}
+
+.palette-section {
+    display: block !important;
+}
+
+/* Add this CSS to fix the collapsed panels issue */
+/* You can add this to your main.css or create a new fix.css file */
+
+/* Reset box-sizing to ensure proper width calculations */
+* {
+    box-sizing: border-box;
+}
+
+/* Fix the main app container */
+#logic-simulator-app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Fix the simulator body layout */
+.simulator-body {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    overflow: hidden;
+    width: 100%;
+    min-height: 0; /* Important for Firefox */
+}
+
+/* Fix component palette */
+.component-palette {
+    width: 240px !important;
+    min-width: 240px !important;
+    max-width: 240px !important;
+    flex-shrink: 0;
+    background: white;
+    border-right: 1px solid #e0e0e0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1rem;
+}
+
+/* Fix canvas container */
+.canvas-container {
+    flex: 1;
+    min-width: 0; /* Allows it to shrink */
+    display: flex;
+    flex-direction: column;
+    background: #fafafa;
+    overflow: hidden;
+}
+
+/* Fix properties panel */
+.properties-panel {
+    width: 320px !important;
+    min-width: 320px !important;
+    max-width: 320px !important;
+    flex-shrink: 0;
+    background: white;
+    border-left: 1px solid #e0e0e0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1rem;
+}
+
+/* Ensure the canvas fills its container */
+#circuit-canvas {
+    width: 100%;
+    flex: 1;
+}
+
+/* Fix toolbar to not overflow */
+.toolbar {
+    flex-shrink: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+/* Ensure palette sections are visible */
+.palette-section {
+    margin-bottom: 2rem;
+}
+
+.palette-section h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #34495e;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.palette-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Ensure panel sections are visible */
+.panel-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.panel-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+/* Fix for expression display */
+.expression-display {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    min-height: 60px;
+}
+
+/* Media query for smaller screens */
+@media (max-width: 1200px) {
+    .component-palette {
+        width: 200px !important;
+        min-width: 200px !important;
+        max-width: 200px !important;
+    }
+    
+    .properties-panel {
+        width: 280px !important;
+        min-width: 280px !important;
+        max-width: 280px !important;
+    }
+}
+
+/* Hide panels on very small screens */
+@media (max-width: 768px) {
+    .component-palette,
+    .properties-panel {
+        display: none;
+    }
+    
+    .canvas-container {
+        width: 100%;
+    }
+}

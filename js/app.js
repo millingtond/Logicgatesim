@@ -26,6 +26,8 @@ class LogicGateSimulator {
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
     }
+
+
     
     resizeCanvas() {
         const container = this.canvas.parentElement;

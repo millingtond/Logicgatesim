@@ -581,28 +581,39 @@ class PracticeMode {
         return this.compareTruthTables(userTable.rows, this.currentQuestion.truthTable);
     }
     
-    checkExpressionAnswer(userExpression) {
-        try {
-            const parser = new ExpressionParser();
-            
-            // Normalize both expressions
-            const userNormalized = this.normalizeExpression(userExpression);
-            const correctNormalized = this.normalizeExpression(this.currentQuestion.correctAnswer);
-            
-            // First check if they're textually identical
-            if (userNormalized === correctNormalized) {
-                return true;
-            }
-            
-            // If not, check logical equivalence via truth tables
-            const userTable = parser.calculateTruthTable(userExpression, this.currentQuestion.circuit.variables);
-            const correctTable = parser.calculateTruthTable(this.currentQuestion.correctAnswer, this.currentQuestion.circuit.variables);
-            
-            return this.compareTruthTables(userTable, correctTable);
-        } catch (error) {
-            return false;
-        }
+checkExpressionAnswer(question, userExpression) {
+    try {
+        const parser = new ExpressionParser();
+        
+        // Normalize both expressions to use word operators
+        const userNormalized = this.normalizeExpression(userExpression);
+        const correctNormalized = this.normalizeExpression(question.correctAnswer);
+        
+        console.log('Comparing expressions:');
+        console.log('User (normalized):', userNormalized);
+        console.log('Correct (normalized):', correctNormalized);
+        
+        // Get variables from both expressions
+        const userVars = this.extractVariables(userNormalized);
+        const correctVars = this.extractVariables(correctNormalized);
+        const allVars = [...new Set([...userVars, ...correctVars])].sort();
+        
+        console.log('Variables:', allVars);
+        
+        // Generate truth tables for both expressions
+        const userTable = this.generateTruthTable(userNormalized, allVars);
+        const correctTable = this.generateTruthTable(correctNormalized, allVars);
+        
+        console.log('User truth table:', userTable);
+        console.log('Correct truth table:', correctTable);
+        
+        // Compare truth tables
+        return this.compareTruthTables(userTable, correctTable);
+    } catch (error) {
+        console.error('Error checking expression:', error);
+        return false;
     }
+}
     
     checkTruthTableAnswer(answers) {
         return this.currentQuestion.hiddenIndices.every(index => {
@@ -611,7 +622,22 @@ class PracticeMode {
             return (userAnswer === '1') === correctAnswer;
         });
     }
+    // Helper method to extract variables from expression
+extractVariables(expression) {
+    // Remove operators and parentheses, then find all variables
+    const cleaned = expression
+        .replace(/\b(AND|OR|NOT|XOR|NAND|NOR)\b/g, ' ')
+        .replace(/[()]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
     
+    const vars = cleaned.split(' ').filter(token => 
+        token && /^[A-Z][A-Z0-9]*$/i.test(token)
+    );
+    
+    return [...new Set(vars)].sort();
+}
+
     checkDebuggingAnswer() {
         // Check if the circuit now matches the expected expression
         const analyzer = new CircuitAnalyzer(this.circuit);
@@ -629,6 +655,31 @@ class PracticeMode {
         return this.compareTruthTables(userTable, correctTable);
     }
     
+    // Generate truth table for an expression
+generateTruthTable(expression, variables) {
+    const table = [];
+    const numRows = Math.pow(2, variables.length);
+    
+    for (let i = 0; i < numRows; i++) {
+        const values = {};
+        
+        // Set variable values based on binary representation
+        variables.forEach((v, j) => {
+            values[v] = (i >> (variables.length - j - 1)) & 1 ? true : false;
+        });
+        
+        // Evaluate expression with these values
+        try {
+            const result = this.evaluateExpression(expression, values);
+            table.push(result);
+        } catch (error) {
+            console.error('Error evaluating expression:', error);
+            table.push(false);
+        }
+    }
+    
+    return table;
+}
     checkSimplificationAnswer(userExpression) {
         try {
             const parser = new ExpressionParser();
@@ -644,34 +695,97 @@ class PracticeMode {
         }
     }
     
-    normalizeExpression(expr) {
-        return expr
-            .toUpperCase()
-            .replace(/\s+/g, ' ')
-            .replace(/[∧·*]/g, 'AND')
-            .replace(/[∨+]/g, 'OR')
-            .replace(/[¬!']/g, 'NOT')
-            .replace(/⊕/g, 'XOR')
-            .replace(/⊼/g, 'NAND')
-            .replace(/⊽/g, 'NOR')
-            .trim();
+normalizeExpression(expr) {
+    // First, normalize all operator symbols to words
+    return expr
+        .toUpperCase()
+        .replace(/\s+/g, ' ')
+        // Convert symbols to words
+        .replace(/[∧·*&]/g, ' AND ')
+        .replace(/[∨+|]/g, ' OR ')
+        .replace(/[¬!~]/g, ' NOT ')
+        .replace(/⊕/g, ' XOR ')
+        .replace(/⊼/g, ' NAND ')
+        .replace(/⊽/g, ' NOR ')
+        // Clean up multiple spaces
+        .replace(/\s+/g, ' ')
+        // Remove spaces around parentheses
+        .replace(/\s*\(\s*/g, '(')
+        .replace(/\s*\)\s*/g, ')')
+        // Ensure spaces around operators
+        .replace(/(\w)(AND|OR|NOT|XOR|NAND|NOR)/g, '$1 $2')
+        .replace(/(AND|OR|NOT|XOR|NAND|NOR)(\w)/g, '$1 $2')
+        .trim();
+}
+evaluateExpression(expression, values) {
+    // Replace variables with their boolean values
+    let expr = expression;
+    
+    // Sort variables by length (longest first) to avoid partial replacements
+    const sortedVars = Object.keys(values).sort((a, b) => b.length - a.length);
+    
+    sortedVars.forEach(variable => {
+        const value = values[variable] ? '1' : '0';
+        // Use word boundaries to match whole variables only
+        const regex = new RegExp(`\\b${variable}\\b`, 'g');
+        expr = expr.replace(regex, value);
+    });
+    
+    console.log('Expression after variable substitution:', expr);
+    
+    // Convert to JavaScript expression
+    expr = expr
+        .replace(/\bAND\b/gi, '&&')
+        .replace(/\bOR\b/gi, '||')
+        .replace(/\bXOR\b/gi, '!==')
+        .replace(/\bNAND\b/gi, '!&&')
+        .replace(/\bNOR\b/gi, '!||')
+        .replace(/\bNOT\s+/gi, '!')
+        .replace(/\b1\b/g, 'true')
+        .replace(/\b0\b/g, 'false');
+    
+    // Handle NAND and NOR specially
+    expr = expr.replace(/!&&/g, '&&!');
+    expr = expr.replace(/!\|\|/g, '||!');
+    
+    // Fix NAND: A NAND B = !(A && B)
+    expr = expr.replace(/(\w+|\))\s*&&!\s*(\w+|\()/g, '!($1 && $2)');
+    
+    // Fix NOR: A NOR B = !(A || B)
+    expr = expr.replace(/(\w+|\))\s*\|\|!\s*(\w+|\()/g, '!($1 || $2)');
+    
+    console.log('JavaScript expression:', expr);
+    
+    try {
+        // Use Function constructor for safe evaluation
+        const func = new Function('return ' + expr);
+        return func();
+    } catch (error) {
+        console.error('Evaluation error:', error, 'Expression:', expr);
+        throw error;
+    }
+}
+
+    
+compareTruthTables(table1, table2) {
+    if (!table1 || !table2) return false;
+    if (table1.length !== table2.length) return false;
+    
+    // Compare each row
+    for (let i = 0; i < table1.length; i++) {
+        // Convert to boolean to ensure consistent comparison
+        const val1 = !!table1[i];
+        const val2 = !!table2[i];
+        
+        if (val1 !== val2) {
+            console.log(`Truth table mismatch at row ${i}: ${val1} vs ${val2}`);
+            return false;
+        }
     }
     
-    compareTruthTables(table1, table2) {
-        if (table1.length !== table2.length) return false;
-        
-        return table1.every((row1, index) => {
-            const row2 = table2[index];
-            
-            // Handle different table formats
-            const output1 = row1.output !== undefined ? row1.output : 
-                          (row1.outputs ? Object.values(row1.outputs)[0] : false);
-            const output2 = row2.output !== undefined ? row2.output : 
-                          (row2.outputs ? Object.values(row2.outputs)[0] : false);
-            
-            return output1 === output2;
-        });
-    }
+    console.log('Truth tables match!');
+    return true;
+}
     
     getTruthTableAnswers() {
         const answers = {};

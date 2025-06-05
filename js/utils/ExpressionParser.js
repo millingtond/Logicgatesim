@@ -1,49 +1,52 @@
 class ExpressionParser {
-    constructor() {
-        // Token types
-        this.TokenType = {
-            VARIABLE: 'VARIABLE',
-            AND: 'AND',
-            OR: 'OR',
-            NOT: 'NOT',
-            XOR: 'XOR',
-            NAND: 'NAND',
-            NOR: 'NOR',
-            LPAREN: 'LPAREN',
-            RPAREN: 'RPAREN',
-            EOF: 'EOF'
-        };
-        
-        // Operator precedence
-        this.precedence = {
-            'OR': 1,
-            'NOR': 1,
-            'XOR': 2,
-            'AND': 3,
-            'NAND': 3,
-            'NOT': 4
-        };
-        
-        // Token patterns
-        this.patterns = [
-            { regex: /^[A-Za-z][A-Za-z0-9]*/, type: this.TokenType.VARIABLE },
-            { regex: /^AND\b/i, type: this.TokenType.AND },
-            { regex: /^OR\b/i, type: this.TokenType.OR },
-            { regex: /^NOT\b/i, type: this.TokenType.NOT },
-            { regex: /^XOR\b/i, type: this.TokenType.XOR },
-            { regex: /^NAND\b/i, type: this.TokenType.NAND },
-            { regex: /^NOR\b/i, type: this.TokenType.NOR },
-            { regex: /^\(/, type: this.TokenType.LPAREN },
-            { regex: /^\)/, type: this.TokenType.RPAREN },
-            // Alternative symbols
-            { regex: /^·|^∧|^\*/, type: this.TokenType.AND },
-            { regex: /^\+|^∨/, type: this.TokenType.OR },
-            { regex: /^'|^¬|^!/, type: this.TokenType.NOT },
-            { regex: /^⊕/, type: this.TokenType.XOR }
-        ];
-        
-        this.reset();
-    }
+constructor() {
+    // Token types
+    this.TokenType = {
+        VARIABLE: 'VARIABLE',
+        AND: 'AND',
+        OR: 'OR',
+        NOT: 'NOT',
+        XOR: 'XOR',
+        NAND: 'NAND',
+        NOR: 'NOR',
+        LPAREN: 'LPAREN',
+        RPAREN: 'RPAREN',
+        EOF: 'EOF'
+    };
+    
+    // Operator precedence
+    this.precedence = {
+        'OR': 1,
+        'NOR': 1,
+        'XOR': 2,
+        'AND': 3,
+        'NAND': 3,
+        'NOT': 4
+    };
+    
+    // Token patterns - ORDER MATTERS! Longer patterns must come first
+    this.patterns = [
+        // Multi-character operators first
+        { regex: /^NAND\b/i, type: this.TokenType.NAND },
+        { regex: /^NOR\b/i, type: this.TokenType.NOR },
+        { regex: /^AND\b/i, type: this.TokenType.AND },
+        { regex: /^XOR\b/i, type: this.TokenType.XOR },
+        { regex: /^NOT\b/i, type: this.TokenType.NOT },
+        { regex: /^OR\b/i, type: this.TokenType.OR },
+        // Parentheses
+        { regex: /^\(/, type: this.TokenType.LPAREN },
+        { regex: /^\)/, type: this.TokenType.RPAREN },
+        // Alternative symbols
+        { regex: /^·|^∧|^\*/, type: this.TokenType.AND },
+        { regex: /^\+|^∨/, type: this.TokenType.OR },
+        { regex: /^'|^¬|^!/, type: this.TokenType.NOT },
+        { regex: /^⊕/, type: this.TokenType.XOR },
+        // Variables - must come after keywords
+        { regex: /^[A-Za-z][A-Za-z0-9]*/, type: this.TokenType.VARIABLE }
+    ];
+    
+    this.reset();
+}
     
     reset() {
         this.tokens = [];
@@ -74,47 +77,58 @@ class ExpressionParser {
     }
     
     // Tokenization
-    tokenize(expression) {
-        let remaining = expression.trim();
+tokenize(expression) {
+    let remaining = expression.trim();
+    
+    while (remaining.length > 0) {
+        // Skip whitespace
+        const whitespaceMatch = remaining.match(/^\s+/);
+        if (whitespaceMatch) {
+            remaining = remaining.substring(whitespaceMatch[0].length);
+            continue;
+        }
         
-        while (remaining.length > 0) {
-            // Skip whitespace
-            const whitespaceMatch = remaining.match(/^\s+/);
-            if (whitespaceMatch) {
-                remaining = remaining.substring(whitespaceMatch[0].length);
-                continue;
-            }
-            
-            // Try to match patterns
-            let matched = false;
-            for (const pattern of this.patterns) {
-                const match = remaining.match(pattern.regex);
-                if (match) {
-                    const value = match[0];
-                    this.tokens.push({
-                        type: pattern.type,
-                        value: value
-                    });
-                    
-                    // Track variables
-                    if (pattern.type === this.TokenType.VARIABLE) {
-                        this.variables.add(value);
+        // Try to match patterns
+        let matched = false;
+        for (const pattern of this.patterns) {
+            const match = remaining.match(pattern.regex);
+            if (match) {
+                const value = match[0];
+                
+                // For operators, check if it's actually a keyword (not part of a variable name)
+                if (pattern.type !== this.TokenType.VARIABLE && pattern.type !== this.TokenType.LPAREN && pattern.type !== this.TokenType.RPAREN) {
+                    // Check if followed by word boundary
+                    const afterMatch = remaining.substring(value.length);
+                    if (afterMatch.length > 0 && /^[A-Za-z0-9]/.test(afterMatch)) {
+                        // This is part of a variable name, not an operator
+                        continue;
                     }
-                    
-                    remaining = remaining.substring(value.length);
-                    matched = true;
-                    break;
                 }
-            }
-            
-            if (!matched) {
-                throw new Error(`Invalid character in expression: ${remaining[0]}`);
+                
+                this.tokens.push({
+                    type: pattern.type,
+                    value: value.toUpperCase() // Normalize to uppercase
+                });
+                
+                // Track variables
+                if (pattern.type === this.TokenType.VARIABLE) {
+                    this.variables.add(value);
+                }
+                
+                remaining = remaining.substring(value.length);
+                matched = true;
+                break;
             }
         }
         
-        // Add EOF token
-        this.tokens.push({ type: this.TokenType.EOF, value: '' });
+        if (!matched) {
+            throw new Error(`Invalid character in expression: ${remaining[0]}`);
+        }
     }
+    
+    // Add EOF token
+    this.tokens.push({ type: this.TokenType.EOF, value: '' });
+}
     
     // Recursive descent parser
     parseExpression() {
