@@ -13,6 +13,7 @@ class LogicGateSimulator {
         this.mode = 'build';
         this.init();
         this.practiceMode = null;
+        this.assessmentMode = null;
     }
     
     init() {
@@ -53,17 +54,40 @@ class LogicGateSimulator {
         });
     }
     
-updateMode() {
-    const practiceSection = document.getElementById('practice-section');
-    if (this.mode === 'practice') {
-        practiceSection.style.display = 'block';
-        if (!this.practiceMode) {
-            this.practiceMode = new PracticeMode(this.circuit, this.canvasManager);
+    updateMode() {
+        const practiceSection = document.getElementById('practice-section');
+        const assessmentSection = document.getElementById('assessment-section');
+        
+        // Hide all mode sections
+        if (practiceSection) practiceSection.style.display = 'none';
+        if (assessmentSection) assessmentSection.style.display = 'none';
+        
+        // Show appropriate section and initialize mode
+        switch (this.mode) {
+            case 'practice':
+                if (practiceSection) {
+                    practiceSection.style.display = 'block';
+                    if (!this.practiceMode) {
+                        this.practiceMode = new PracticeMode(this.circuit, this.canvasManager);
+                    }
+                }
+                break;
+                
+            case 'assessment':
+                if (assessmentSection) {
+                    assessmentSection.style.display = 'block';
+                    if (!this.assessmentMode) {
+                        this.assessmentMode = new AssessmentMode(this.circuit, this.canvasManager);
+                    }
+                }
+                break;
+                
+            case 'build':
+            default:
+                // Build mode - just hide other sections
+                break;
         }
-    } else {
-        practiceSection.style.display = 'none';
     }
-}
     
     buildCircuitFromExpression(expression) {
         try {
@@ -79,19 +103,14 @@ updateMode() {
     
     startSimulation() {
         setInterval(() => {
-            if (this.mode === 'build') {
+            if (this.mode === 'build' || 
+                (this.assessmentMode && this.assessmentMode.state.active) ||
+                (this.practiceMode && this.practiceMode.state.active)) {
                 this.simulator.simulate();
                 this.canvasManager.render();
                 this.propertiesPanel.update();
             }
         }, 100);
-    }
-    
-    startPracticeMode() {
-        const generator = new QuestionGenerator();
-        const question = generator.generateQuestion();
-        // Display question in practice section
-        // Implementation continues...
     }
 }
 

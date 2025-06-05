@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/practice-mode.css">
+    <link rel="stylesheet" href="css/assessment-mode.css">
 </head>
 <body>
     <div id="logic-simulator-app">
@@ -139,6 +140,10 @@
                     <button id="btn-check-answer" class="btn-primary">Check Answer</button>
                     <button id="btn-next-question" class="btn-secondary">Next Question</button>
                 </section>
+
+                <section id="assessment-section" style="display: none;">
+                    <!-- Assessment mode content will be inserted here by AssessmentMode.js -->
+                </section>
             </aside>
         </div>
     </div>
@@ -159,6 +164,8 @@
     <script src="js/ui/Palette.js"></script>
     <script src="js/ui/PropertiesPanel.js"></script>
     <script src="js/ui/Toolbar.js"></script>
+    <script src="js/components/Educational/PracticeMode.js"></script>
+    <script src="js/components/Educational/AssessmentMode.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
